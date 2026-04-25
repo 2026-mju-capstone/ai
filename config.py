@@ -2,7 +2,7 @@
 
 MODEL_ID = "openai/clip-vit-base-patch32"
 YOLO_MODEL_PATH = "yolo11s.pt"
-VIDEO_PATH = "/Users/keonwoo/Documents/capstone_project/ai_prototype/video/test.mp4"
+VIDEO_PATH = "video/test.mp4"
 SHOW_UI = False  # UI 표시 여부 (성능 최대화를 위해 False로 설정 가능)
 # YOLO 추적 대상 물체
 

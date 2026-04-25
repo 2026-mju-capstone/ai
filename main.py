@@ -3,6 +3,10 @@ import uvicorn
 
 from api.vision import vision
 from api.cctv import cctv
+from models.loader import load_models
+
+# 서버 시작 시 모델 로드
+load_models()
 
 app = FastAPI(
     title="2026 Myongji Capstone AI Server",
@@ -22,4 +26,4 @@ async def health_check():
     return {"status": "ok"}
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True) 
