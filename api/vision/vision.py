@@ -16,5 +16,5 @@ async def analyze_vision(request: VisionRequest):
     # 서비스 호출
     result = await vision_service.analyze_image(request.image_url)
 
-    # 임시 목업 응답 반환
+    # result를 VisionResponse 형태로 변환
     return VisionResponse(**result)

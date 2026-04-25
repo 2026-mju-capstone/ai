@@ -25,10 +25,5 @@ class VisionService:
             "color": color,
             "embedding": vector
         }
-
-
-
-
-
 # 싱글톤 객체
 vision_service = VisionService()
