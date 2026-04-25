@@ -69,13 +69,14 @@ class VideoProcessor:
         self._cleanup(cap)
         return theft_snapshots
 
-    def _handle_theft_detection(self) -> Dict[str, str]:
-        """도난이 탐지되었을 때 스냅샷 정보를 추출합니다."""
+    def _handle_theft_detection(self) -> dict:
+        """도난이 탐지되었을 때 스냅샷 및 신뢰도 정보를 추출합니다."""
         last_alert = self.detector.alerts[-1]
         print("[INFO]     Theft detected. Stopping video processing.")
         return {
             'baseline': last_alert['baseline_file'],
-            'moment': last_alert['moment_file']
+            'moment': last_alert['moment_file'],
+            'confidence': last_alert['confidence']
         }
 
     def _render_ui(self, frame, detection_result, cap):
