@@ -3,6 +3,7 @@ from core.processor import VideoProcessor
 from models.analyzer import ImageAnalyzer
 import requests
 from .schema import CctvAnalyzeRequest, CctvCallbackRequest, DetectionInfo
+from core.logger import TheftLogger
 
 class CctvService:
     def __init__(self):
@@ -11,6 +12,7 @@ class CctvService:
 
         self.video_proc = VideoProcessor(self.yolo_model)
         self.analyzer = ImageAnalyzer(self.clip_model, self.processor)
+        self.logger = TheftLogger()
     
     def analyze_video_async(self, request: CctvAnalyzeRequest):
         """
@@ -55,6 +57,9 @@ class CctvService:
             detections=detections,
             error_message=error_msg
         )
+        
+        # 3. 결과 로깅 (콜백 데이터와 동일한 형식)
+        self.logger.log_callback(callback_payload.model_dump())
         
         print(f"[INFO]     Analysis complete. Sending callback to: {request.callback_url}")
         try:
