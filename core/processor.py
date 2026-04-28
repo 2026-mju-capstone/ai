@@ -124,6 +124,7 @@ class VideoProcessor:
     def _cleanup(self, cap):
         """리소스 해제 및 윈도우 종료"""
         cap.release()
-        cv2.destroyAllWindows()
-        if platform.system() == 'Darwin':
-            cv2.waitKey(1)
+        if config.SHOW_UI:
+            cv2.destroyAllWindows()
+            if platform.system() == 'Darwin':
+                cv2.waitKey(1)

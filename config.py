@@ -1,9 +1,12 @@
 # 설정
-
 MODEL_ID = "openai/clip-vit-base-patch32"
 YOLO_MODEL_PATH = "yolo11s.pt"
 VIDEO_PATH = "video/test.mp4"
-SHOW_UI = False  # UI 표시 여부 (성능 최대화를 위해 False로 설정 가능)
+import sys
+# 실행 환경 감지 (main.py로 실행되면 서버 모드)
+IS_SERVER = any('main.py' in arg for arg in sys.argv)
+SHOW_UI = False if IS_SERVER else True  # 서버면 강제 False, 로컬(cli_main)이면 기본 True
+
 # YOLO 추적 대상 물체
 
 VALID_LOST_ITEMS = {
