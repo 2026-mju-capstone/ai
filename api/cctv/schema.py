@@ -36,6 +36,7 @@ class DetectionInfo(BaseModel):
     confidence: float
     category: str
     color: Optional[str] = None
+    embedding: List[float]
     item_snapshot_url: str
     moment_snapshot_url: str
 

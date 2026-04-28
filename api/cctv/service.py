@@ -47,6 +47,7 @@ class CctvService:
                             print(f"[WARN]     Image analysis failed, skipping detection")
                             continue
                         category, color = result
+                        vector =  self.analyzer.extract_vector(snapshots['baseline'])
                         
                         # recorded_at + 포착 시점 경과 시간으로 실제 탐지 시각 계산
                         detected_at = video.recorded_at + timedelta(seconds=snapshots['detected_seconds'])
@@ -57,6 +58,7 @@ class CctvService:
                             confidence=snapshots.get('confidence'),
                             category=category,
                             color=color,
+                            embedding=vector,
                             item_snapshot_url=f"{snapshots['baseline']}",
                             moment_snapshot_url=f"{snapshots['moment']}"
                         )
