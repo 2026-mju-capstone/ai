@@ -35,11 +35,7 @@ class TheftLogger:
 
     def log_event(self, event_type: str, data: Dict[str, Any]):
         """
-        새로운 이벤트를 기록하고 파일에 저장합니다.
-        
-        Args:
-            event_type: 이벤트의 종류 ('theft_suspected', 'system_start' 등)
-            data: 이벤트와 관련된 상세 데이터
+        일반적인 이벤트를 기록합니다.
         """
         entry = {
             'timestamp': datetime.now().isoformat(),
@@ -49,6 +45,21 @@ class TheftLogger:
         self.events.append(entry)
         self._save()
         print(f"[LOGGER]   Event recorded: {event_type}")
+
+    def log_callback(self, data: Dict[str, Any]):
+        """
+        콜백 데이터 형식을 그대로 유지하면서 타임스탬프만 추가하여 기록합니다.
+        
+        Args:
+            data: CctvCallbackRequest의 model_dump() 결과 데이터
+        """
+        entry = data.copy()
+        # 콜백 데이터와 겹치지 않는 필드명 사용
+        entry['logged_at'] = datetime.now().isoformat()
+        
+        self.events.append(entry)
+        self._save()
+        print(f"[LOGGER]   Callback data logged (Job ID: {entry.get('job_id')})")
 
     def _save(self):
         """현재까지의 모든 이벤트를 JSON 파일로 저장합니다."""

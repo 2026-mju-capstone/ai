@@ -9,15 +9,6 @@ class VideoInfo(BaseModel):
     video_id: int
     url: str
     recorded_at: datetime
-    building_id: int
-    room_number: str
-
-class TargetTraits(BaseModel):
-    """
-    탐지할 대상의 특징 스키마
-    """
-    category: Optional[str] = None
-    color: Optional[str] = None
 
 class CctvAnalyzeRequest(BaseModel):
     """
@@ -26,11 +17,34 @@ class CctvAnalyzeRequest(BaseModel):
     job_id: int
     callback_url: str
     videos: List[VideoInfo]
-    target_traits: TargetTraits
+
 
 class CctvAnalyzeResponse(BaseModel):
     """
     CCTV 분석 요청 접수 응답 스키마
     """
     job_id: int
+    status: str 
+
+
+class DetectionInfo(BaseModel):
+    """
+    탐지 항목에 대한 스키마
+    """
+    video_id: int
+    detected_at: str
+    confidence: float
+    category: str
+    color: Optional[str] = None
+    embedding: List[float]
+    item_snapshot_url: str
+    moment_snapshot_url: str
+
+class CctvCallbackRequest(BaseModel):
+    """
+    CCTV 분석 요청 콜백 스키마
+    """
+    job_id: int
     status: str
+    detections: List[DetectionInfo]
+    error_message: Optional[str] = None
