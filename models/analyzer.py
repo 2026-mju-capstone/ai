@@ -20,13 +20,24 @@ class ImageAnalyzer:
         sorted_output = sorted(zip(labels, probs), key=lambda x: x[1], reverse=True)
         return sorted_output[0]
 
+    def _load_image(self, img_path: str) -> Image.Image:
+        """로컬 경로 또는 URL에서 이미지를 로드합니다."""
+        import requests
+        from io import BytesIO
+        
+        if img_path.startswith(('http://', 'https://')):
+            response = requests.get(img_path, timeout=10)
+            return Image.open(BytesIO(response.content)).convert("RGB")
+        else:
+            return Image.open(img_path).convert("RGB")
+
     def analyze_item(self, img_path: str) -> Optional[Tuple[str, str]]:
         """이미지를 분석하여 카테고리와 색상을 반환합니다."""
         if not img_path:
             return None
 
         try:
-            image = Image.open(img_path).convert("RGB")
+            image = self._load_image(img_path)
             
             # 1. 카테고리 분석
             category, prob_item = self._analyze_category(image)
@@ -73,7 +84,7 @@ class ImageAnalyzer:
             return None
             
         try:
-            image = Image.open(image_path).convert("RGB")
+            image = self._load_image(image_path)
             inputs = self.processor(images=image, return_tensors="pt")
     
             with torch.no_grad():
