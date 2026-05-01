@@ -62,7 +62,6 @@
     {
       "video_id": "Long",
       "detected_at": "String",
-      "confidence": "Float",
       "category": "String",
       "color": "String",
       "embedding": "List<Float>",
