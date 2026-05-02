@@ -165,11 +165,13 @@ class CctvService:
         send_progress(0, 0.0)
 
         try:
-            await asyncio.to_thread(
-                self.video_proc.process,
-                req.video_path, video_id, 
-                on_progress=send_progress, 
-                on_detection=on_detection
+            await asyncio.wait_for(
+                asyncio.to_thread(
+                    self.video_proc.process,
+                    req.video_path, video_id, 
+                    on_progress=send_progress, 
+                    on_detection=on_detection
+                ), timeout=1800.0
             )
             
             job["status"] = "COMPLETED"
@@ -189,14 +191,44 @@ class CctvService:
                 completed_payload
             )
                                
-        except Exception as e:
-            print(f"[ERROR]    Analysis failed for {video_id}: {e}")
+        except asyncio.TimeoutError:
+            print(f"[ERROR]    Analysis TIMEOUT for {video_id} (30 min exceeded)")
             job["status"] = "FAILED"
+            failed_payload = CctvFailedCallback(
+                video_id=video_id,
+                error_code="TIMEOUT",
+                error_message="Single video processing exceeded 30 minutes",
+                analyzed_seconds=int(req.duration_seconds * (job["progress"] / 100)),
+                total_seconds=req.duration_seconds
+            )
+            trigger_callback_async(f"{req.callback_base_url}/api/internal/cctv/failed", failed_payload)
+
+        except Exception as e:
+            error_msg = str(e)
+            print(f"[ERROR]    Analysis failed for {video_id}: {error_msg}")
+            job["status"] = "FAILED"
+            
+            # 명세서(README)에 정의된 5가지 코드만 사용
+            # 1. VIDEO_DECODE_ERROR (디코딩 실패)
+            # 2. MODEL_INFERENCE_ERROR (YOLO/CLIP 추론 실패)
+            # 3. STORAGE_ERROR (스냅샷 저장 실패)
+            # 4. TIMEOUT (위에서 처리됨)
+            # 5. UNKNOWN (기타)
+            
+            error_code = "UNKNOWN"
+            lower_msg = error_msg.lower()
+            
+            if "could not open" in lower_msg or "decode" in lower_msg or "ffmpeg" in lower_msg:
+                error_code = "VIDEO_DECODE_ERROR"
+            elif "analyze" in lower_msg or "inference" in lower_msg or "model" in lower_msg:
+                error_code = "MODEL_INFERENCE_ERROR"
+            elif "save" in lower_msg or "storage" in lower_msg or "write" in lower_msg:
+                error_code = "STORAGE_ERROR"
             
             failed_payload = CctvFailedCallback(
                 video_id=video_id,
-                error_code="ANALYSIS_ERROR",
-                error_message=str(e),
+                error_code=error_code,
+                error_message=error_msg,
                 analyzed_seconds=int(req.duration_seconds * (job["progress"] / 100)),
                 total_seconds=req.duration_seconds
             )
