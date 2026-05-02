@@ -73,13 +73,13 @@ class CctvService:
 
     async def run_worker(self):
         """백그라운드에서 큐를 감시하며 작업을 하나씩 처리"""
-        print("[INFO] Worker started and waiting for jobs...")
+        print("[INFO]     Worker started and waiting for jobs...")
         while True:
             video_id = await self.queue.get()
             try:
                 await self._process_video(video_id)
             except Exception as e:
-                print(f"[ERROR] Worker failed for video {video_id}: {e}")
+                print(f"[ERROR]    Worker failed for video {video_id}: {e}")
             finally:
                 self.queue.task_done()
 
@@ -147,7 +147,7 @@ class CctvService:
                                ))
                                
         except Exception as e:
-            print(f"[ERROR] Analysis failed for {video_id}: {e}")
+            print(f"[ERROR]    Analysis failed for {video_id}: {e}")
             job["status"] = "FAILED"
             self._send_callback(f"{req.callback_base_url}/api/internal/cctv/failed",
                                CctvFailedCallback(
@@ -164,7 +164,7 @@ class CctvService:
             res = requests.post(url, json=payload.model_dump(mode='json'))
             return res.status_code == 200
         except Exception as e:
-            print(f"[WARN] Callback failed: {e}")
+            print(f"[WARN]     Callback failed: {e}")
             return False
 
 # 싱글톤 객체
