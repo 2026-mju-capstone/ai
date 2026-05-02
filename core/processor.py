@@ -4,6 +4,7 @@ import platform
 from typing import Optional, Dict, List, Any
 from config import config
 from core.detector import TheftDetector
+from core.visualizer import Visualizer
 
 class VideoProcessor:
     """비디오 스트림을 처리하고 YOLO 및 TheftDetector를 연동하는 클래스"""
@@ -12,6 +13,7 @@ class VideoProcessor:
         self.model = yolo_model
         # 기본 FPS 30으로 초기화 (process 호출 시 실제 FPS로 갱신됨)
         self.detector = TheftDetector(fps=30.0)
+        self.visualizer = Visualizer() if config.SHOW_UI else None
         self.frame_count = 0
         self.start_time: Optional[float] = None
         self.target_indices: List[int] = []
@@ -36,13 +38,10 @@ class VideoProcessor:
         total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
         fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
         
-        # 매번 영상이 들어올 때마다 상태 초기화 및 FPS 설정
+        # 매번 영상이 들어올 때마다 상태 초기화
         self.frame_count = 0
         self.start_time = None
-        self.detector = TheftDetector(
-            fps=fps,
-            video_id=video_id
-        )
+        self.detector = TheftDetector(fps=fps, video_id=video_id)
             
         all_detections = []
         
@@ -92,51 +91,20 @@ class VideoProcessor:
                 if not config.SHOW_UI:
                     print(f"[INFO]     Processing... {progress_percent:.1f}%")
 
-            # UI 또는 상태 출력
-            if config.SHOW_UI:
-                self._render_ui(frame, results[0], cap)
+            # UI 출력 (Visualizer 사용)
+            if self.visualizer:
+                elapsed_time = time.time() - self.start_time
+                avg_fps = self.frame_count / elapsed_time if elapsed_time > 0 else 0
+                self.visualizer.render(frame, results[0], self.frame_count, total_frames, avg_fps)
+                
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     break
                 
         self._cleanup(cap)
         return all_detections
 
-    def _handle_theft_detection(self) -> dict:
-        """도난이 탐지되었을 때 스냅샷 및 신뢰도 정보를 추출합니다."""
-        last_alert = self.detector.alerts[-1]
-        print("[INFO]     Theft detected. Stopping video processing.")
-        return {
-            'baseline': last_alert['baseline_file'],
-            'moment': last_alert['moment_file'],
-            'confidence': last_alert['confidence']
-        }
-
-    def _render_ui(self, frame, detection_result, cap):
-        """화면에 탐지 결과와 상태 정보를 렌더링합니다."""
-        annotated_frame = detection_result.plot()
-        
-        elapsed_time = time.time() - self.start_time
-        avg_fps = self.frame_count / elapsed_time if elapsed_time > 0 else 0
-        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        
-        # UI 오버레이 (반투명 배경)
-        overlay = annotated_frame.copy()
-        cv2.rectangle(overlay, (10, 10), (320, 90), (0, 0, 0), -1)
-        cv2.addWeighted(overlay, 0.4, annotated_frame, 0.6, 0, annotated_frame)
-        
-        # 텍스트 정보 표시
-        font = cv2.FONT_HERSHEY_SIMPLEX
-        cv2.putText(annotated_frame, f"Frame: {self.frame_count} / {total_frames}", 
-                    (20, 40), font, 0.7, (255, 255, 255), 2)
-        cv2.putText(annotated_frame, f"Avg FPS: {avg_fps:.2f}", 
-                    (20, 75), font, 0.7, (0, 255, 0), 2)
-
-        cv2.imshow("Theft Detection System", annotated_frame)
-
     def _cleanup(self, cap):
-        """리소스 해제 및 윈도우 종료"""
+        """리소스 해제 및 UI 종료"""
         cap.release()
-        if config.SHOW_UI:
-            cv2.destroyAllWindows()
-            if platform.system() == 'Darwin':
-                cv2.waitKey(1)
+        if self.visualizer:
+            self.visualizer.close()
