@@ -2,7 +2,7 @@ import torch
 import torch.nn.functional as F
 from PIL import Image
 from typing import Tuple, List, Optional, Any
-import config
+from config import config
 
 class ImageAnalyzer:
     """CLIP 모델을 사용하여 이미지의 카테고리, 색상 및 특징 벡터를 분석하는 클래스"""

@@ -1,4 +1,4 @@
-import config
+from config import config
 from models.loader import load_models
 from models.analyzer import ImageAnalyzer
 from core.processor import VideoProcessor
