@@ -1,7 +1,7 @@
 import torch
 from transformers import CLIPModel, CLIPProcessor
 from ultralytics import YOLO
-import config
+from config import config
 import sys
 from typing import Tuple
 

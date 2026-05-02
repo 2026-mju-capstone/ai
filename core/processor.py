@@ -2,7 +2,7 @@ import cv2
 import time
 import platform
 from typing import Optional, Dict, List, Any
-import config
+from config import config
 from core.detector import TheftDetector
 
 class VideoProcessor:
@@ -10,10 +10,8 @@ class VideoProcessor:
     
     def __init__(self, yolo_model):
         self.model = yolo_model
-        self.detector = TheftDetector(
-            stationary_threshold_frames=50, 
-            proximity_pixels=100
-        )
+        # 기본 FPS 30으로 초기화 (process 호출 시 실제 FPS로 갱신됨)
+        self.detector = TheftDetector(fps=30.0)
         self.frame_count = 0
         self.start_time: Optional[float] = None
         self.target_indices: List[int] = []
@@ -30,21 +28,21 @@ class VideoProcessor:
     def process(self, video_path: str, video_id: int = 0, 
                 on_progress=None, on_detection=None) -> List[Dict[str, Any]]:
         """비디오 파일을 읽어 도난 탐지 프로세스를 수행하며 실시간 이벤트를 알립니다."""
-        # 매번 영상이 들어올 때마다 프레임 수, 추적기 상태 등을 초기화
-        self.frame_count = 0
-        self.start_time = None
-        self.detector = TheftDetector(
-            stationary_threshold_frames=50, 
-            proximity_pixels=100,
-            video_id=video_id
-        )
         cap = cv2.VideoCapture(video_path)
         if not cap.isOpened():
             raise ValueError(f"Could not open video file: {video_path}")
         
-        # 영상 정보 (전체 프레임, FPS)
+        # 영상 정보 (전체 프레임, FPS) 추출
         total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
         fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
+        
+        # 매번 영상이 들어올 때마다 상태 초기화 및 FPS 설정
+        self.frame_count = 0
+        self.start_time = None
+        self.detector = TheftDetector(
+            fps=fps,
+            video_id=video_id
+        )
             
         all_detections = []
         

@@ -1,40 +1,53 @@
 import sys
 import os
 
-# 설정
-MODEL_ID = "openai/clip-vit-base-patch32"
-YOLO_MODEL_PATH = "yolo11s.pt"
-VIDEO_PATH = "video/test.mp4"
+class Settings:
+    """프로젝트 전반에서 사용하는 설정 클래스"""
+    
+    # --- 모델 관련 설정 ---
+    MODEL_ID = "openai/clip-vit-base-patch32"
+    YOLO_MODEL_PATH = "yolo11s.pt"
+    
+    # --- 실행 환경 설정 ---
+    VIDEO_PATH = "video/test.mp4" # 테스트용 기본 비디오 경로
+    # 실행 파일 이름이 main.py인지 확인하여 서버 환경 감지
+    _exec_file = os.path.basename(sys.argv[0])
+    IS_SERVER = (_exec_file == 'main.py')
+    SHOW_UI = False if IS_SERVER else True
+    
+    # --- 탐지 대상 및 분석 카테고리 ---
+    VALID_LOST_ITEMS = {
+        'backpack', 'umbrella', 'handbag', 
+        'bottle', 'cup', 'cell phone', 'book'
+    }
+    
+    ANALYSIS_CATEGORIES = [
+        "smartphone", "earphones", "bag", "wallet", 
+        "credit card", "student ID card", "textbook", "notebook", 
+        "umbrella", "water bottle", "pencil case", "plush toy"
+    ]
+    
+    ANALYSIS_COLORS = [
+        "black", "white", "gray", "red", "blue", "green", 
+        "yellow", "brown", "pink", "purple", "orange", "beige"
+    ]
+    
+    # --- 도난 탐지 임계값 (초 단위 기준) ---
+    STATIONARY_DURATION = 1.6      # 정지 상태 판단 시간 (초)
+    VERIFICATION_DURATION = 1.0    # 사라짐 확인 대기 시간 (초)
+    STATIONARY_DISTANCE_LIMIT = 50 # 정지 상태로 간주할 최대 이동 거리 (픽셀)
+    PROXIMITY_LIMIT = 100          # 인접성 판단 기준 (픽셀)
+    
+    # --- 근접 이력 유효 시간 (초 단위) ---
+    NEAR_HISTORY_TOUCH_DURATION = 4.0      # 접촉 시 이력 유지 시간
+    NEAR_HISTORY_PROXIMITY_DURATION = 2.0  # 근접 시 이력 유지 시간
 
-# 실행 환경 감지 (실행 파일 이름이 main.py인지 확인)
-_exec_file = os.path.basename(sys.argv[0])
-IS_SERVER = (_exec_file == 'main.py')
-SHOW_UI = False if IS_SERVER else True
+    # --- 도난 신뢰도 점수 가중치 ---
+    THEFT_CONFIDENCE_THRESHOLD = 0.7
+    CONTACT_WEIGHT = 0.3           # 비소유자 접촉
+    OWNER_CLARITY_WEIGHT = 0.5     # 소유자 불일치
+    NO_OWNER_WEIGHT = 0.2          # 초기 소유자 없음
+    STATIONARY_WEIGHT = 0.2        # 정지 상태 확실성
 
-# YOLO 추적 대상 물체
-
-VALID_LOST_ITEMS = {
-    'backpack', 'umbrella', 'handbag', 
-    'bottle', 'cup', 'cell phone', 'book'
-}
-
-# CLIP 분석 카테고리
-ANALYSIS_CATEGORIES = [
-    "smartphone", "earphones", "bag", "wallet", 
-    "credit card", "student ID card", "textbook", "notebook", 
-    "umbrella", "water bottle", "pencil case", "plush toy"
-]
-
-# CLIP 색상 프롬프트
-ANALYSIS_COLORS = [
-    "black", "white", "gray", "red", "blue", "green", 
-    "yellow", "brown", "pink", "purple", "orange", "beige"
-]
-
-# --- 개선된 도난 탐지 설정 ---
-THEFT_CONFIDENCE_THRESHOLD = 0.7  # 경고 발생을 위한 신뢰도 임계값
-VERIFICATION_FRAMES = 30          # 경고 발생 전 물체가 사라져야 하는 연속 프레임 수
-CONTACT_WEIGHT = 0.3              # 비소유자 접촉
-OWNER_CLARITY_WEIGHT = 0.5        # 초기 소유자 지정의 명확성 (소유자 없을 시 0.0)
-NO_OWNER_WEIGHT = 0.2             # 초기 소유자가 없을 때
-STATIONARY_WEIGHT = 0.2           # 정지 상태의 확실성
+# 싱글톤처럼 사용하기 위해 인스턴스화
+config = Settings()

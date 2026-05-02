@@ -4,7 +4,7 @@ import cv2
 import math
 import time
 import os
-import config
+from config import config
 from core.logger import TheftLogger
 
 @dataclass
@@ -25,11 +25,13 @@ class TrackedItem:
 class TheftDetector:
     """도난 탐지 로직을 수행하는 메인 클래스"""
     
-    def __init__(self, stationary_threshold_frames: int = 50, proximity_pixels: int = 100, 
-                 missing_threshold_frames: int = 10, output_dir: str = "output", video_id: int = 0):
-        self.stationary_threshold = stationary_threshold_frames
-        self.proximity_pixels = proximity_pixels
-        self.missing_threshold = missing_threshold_frames
+    def __init__(self, fps: float = 30.0, output_dir: str = "output", video_id: int = 0):
+        # FPS 기반 임계값 계산
+        self.fps = fps
+        self.stationary_threshold = int(config.STATIONARY_DURATION * fps)
+        self.verification_threshold = int(config.VERIFICATION_DURATION * fps)
+        self.proximity_pixels = config.PROXIMITY_LIMIT
+        
         self.output_dir = output_dir
         self.items_dir = os.path.join(output_dir, "items")
         self.moments_dir = os.path.join(output_dir, "moments")
@@ -122,7 +124,8 @@ class TheftDetector:
         """물체가 움직이지 않고 한 자리에 머물고 있는지 확인합니다."""
         dist_moved = self._calculate_distance(current_center, item.last_pos)
         
-        if dist_moved < 50:
+        # 설정된 거리 미만으로 이동 시 정지 상태로 카운트
+        if dist_moved < config.STATIONARY_DISTANCE_LIMIT:
             item.stay_count += 1
         else:
             item.stay_count = 0
@@ -137,7 +140,11 @@ class TheftDetector:
         closest_id, is_touching = self._find_closest_person(item_dict, persons)
         
         if closest_id is not None:
-            item.near_history = 120 if is_touching else 60
+            # 접촉 시와 단순 근접 시의 이력 유지 시간을 다르게 적용
+            touch_frames = int(config.NEAR_HISTORY_TOUCH_DURATION * self.fps)
+            prox_frames = int(config.NEAR_HISTORY_PROXIMITY_DURATION * self.fps)
+            
+            item.near_history = touch_frames if is_touching else prox_frames
             item.last_person_id = closest_id
         else:
             item.near_history = max(0, item.near_history - 1)
@@ -169,7 +176,7 @@ class TheftDetector:
             if item.missing_count == 1:
                 item.potential_moment_frame = frame.copy()
             
-            if item.missing_count >= config.VERIFICATION_FRAMES:
+            if item.missing_count >= self.verification_threshold:
                 if self._verify_theft(item, frame):
                     detected_theft = True
                 del self.tracked_items[tid]
