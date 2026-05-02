@@ -6,6 +6,7 @@ import time
 import os
 from config import config
 from core.logger import TheftLogger
+from core.storage import EvidenceManager
 
 @dataclass
 class TrackedItem:
@@ -26,26 +27,20 @@ class TheftDetector:
     """도난 탐지 로직을 수행하는 메인 클래스"""
     
     def __init__(self, fps: float = 30.0, output_dir: str = "output", video_id: int = 0):
-        # FPS 기반 임계값 계산
+        # FPS 기반 임계값 및 설정 로드
         self.fps = fps
         self.stationary_threshold = int(config.STATIONARY_DURATION * fps)
         self.verification_threshold = int(config.VERIFICATION_DURATION * fps)
         self.proximity_pixels = config.PROXIMITY_LIMIT
         
-        self.output_dir = output_dir
-        self.items_dir = os.path.join(output_dir, "items")
-        self.moments_dir = os.path.join(output_dir, "moments")
         self.video_id = video_id
         self.detection_count = 0
-        
         self.tracked_items: Dict[int, TrackedItem] = {}
         self.alerts = []
-        self.logger = TheftLogger()
         
-        # 필요한 모든 디렉토리 생성
-        for d in [self.output_dir, self.items_dir, self.moments_dir]:
-            if d and not os.path.exists(d):
-                os.makedirs(d)
+        # 외부 컴포넌트 초기화
+        self.logger = TheftLogger()
+        self.storage = EvidenceManager(output_dir)
 
     def _calculate_distance(self, p1: Tuple[int, int], p2: Tuple[int, int]) -> float:
         """두 점 사이의 유클리드 거리를 계산합니다."""
@@ -231,14 +226,10 @@ class TheftDetector:
         self.detection_count += 1
         timestamp = time.strftime("%Y%m%d_%H%M%S")
         
-        # 파일명 규칙 적용 및 폴더 분리: items/ 및 moments/
-        moment_file = os.path.join(self.moments_dir, f"{self.video_id}-{self.detection_count}_theft_moment.jpg")
-        baseline_file = os.path.join(self.items_dir, f"{self.video_id}-{self.detection_count}_stolen_item.jpg")
-        
-        cv2.imwrite(moment_file, frame)
-        if item.baseline_crop is not None:
-            cv2.imwrite(baseline_file, item.baseline_crop)
-            print(f"[SAVE]     Baseline image saved: {baseline_file}")
+        # EvidenceManager를 통한 이미지 저장
+        moment_file, baseline_file = self.storage.save_evidence(
+            self.video_id, self.detection_count, frame, item.baseline_crop
+        )
 
         print(f"[ALERT]    Theft suspected! ID: {item.id} (Confidence: {score:.2f})")
         
