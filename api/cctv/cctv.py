@@ -1,5 +1,5 @@
-from fastapi import APIRouter, BackgroundTasks, status
-from .schema import CctvAnalyzeRequest, CctvAnalyzeResponse
+from fastapi import APIRouter, status, HTTPException
+from .schema import CctvEnqueueRequest, CctvEnqueueResponse, CctvStatusResponse
 from .service import cctv_service
 
 router = APIRouter(
@@ -7,26 +7,25 @@ router = APIRouter(
     tags=["cctv"],
 )
 
-@router.post("/analyze", response_model=CctvAnalyzeResponse, status_code=status.HTTP_202_ACCEPTED)
-async def analyze_cctv(request: CctvAnalyzeRequest, background_tasks: BackgroundTasks):
+@router.post("/enqueue", response_model=CctvEnqueueResponse, status_code=status.HTTP_202_ACCEPTED)
+async def enqueue_cctv(request: CctvEnqueueRequest):
     """
-    CCTV 영상 분석 요청 접수 (비동기 처리)
+    CCTV 영상 분석 요청을 큐에 등록
     """
-    # 백그라운드 작업 등록
-    background_tasks.add_task(
-        cctv_service.analyze_video_async,
-        request
-    )
+    response = await cctv_service.enqueue_video(request)
     
-    # 202 Accepted와 함께 현재 상태 PROCESSING 반환 (명세서 기준)
-    return CctvAnalyzeResponse(
-        job_id=request.job_id,
-        status="PROCESSING"
-    )
-
-@router.post("/callback")
-async def test_callback(payload: dict):
-    print("테스트용 콜백")
-    print(payload)
-
-    return {"success": True}
+    # 이미 큐에 있거나 분석 중인 경우 409 Conflict 반환
+    if not response.queued:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=response.reason)
+        
+    return response
+@router.get("/status/{video_id}", response_model=CctvStatusResponse)
+async def get_cctv_status(video_id: int):
+    """
+    특정 영상의 분석 진행 상태 조회
+    """
+    status_info = cctv_service.get_job_status(video_id)
+    if status_info is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Job not found")
+        
+    return status_info
