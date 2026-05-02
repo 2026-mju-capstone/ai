@@ -55,8 +55,8 @@ class CctvService:
                         detection = DetectionInfo(
                             video_id=video.video_id,
                             detected_at=detected_at.isoformat(),
-                            category=category,
-                            color=color,
+                            category=category.replace(" ", "_").upper(),
+                            color=color.replace(" ", "_").upper(),
                             embedding=vector,
                             item_snapshot_url=f"{snapshots['baseline']}",
                             moment_snapshot_url=f"{snapshots['moment']}"
