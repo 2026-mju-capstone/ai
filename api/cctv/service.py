@@ -25,9 +25,15 @@ class CctvService:
         self.video_proc = VideoProcessor(self.yolo_model)
         self.logger = TheftLogger()
         
-        # 큐 및 작업 관리
-        self.queue = asyncio.Queue()
+        # 큐 및 작업 관리 (지연 초기화 예정)
+        self._queue = None
         self.active_jobs: Dict[int, Dict[str, Any]] = {} # video_id -> status_info
+
+    @property
+    def queue(self) -> asyncio.Queue:
+        if self._queue is None:
+            self._queue = asyncio.Queue()
+        return self._queue
 
     async def enqueue_video(self, request: CctvEnqueueRequest) -> CctvEnqueueResponse:
         """분석 요청을 큐에 적재"""
