@@ -43,7 +43,7 @@ class Settings:
     NEAR_HISTORY_PROXIMITY_DURATION = 2.0  # 근접 시 이력 유지 시간
     
     # --- 분석 속도 및 시간 예측 ---
-    ANALYSIS_SPEED_FACTOR = 0.5    # 분석 속도 계수 (실제 영상 시간 대비 처리 속도)
+    ANALYSIS_SPEED_FACTOR = 0.7    # 분석 속도 계수 (실제 영상 시간 대비 처리 속도)
 
     # --- 도난 신뢰도 점수 가중치 ---
     THEFT_CONFIDENCE_THRESHOLD = 0.7
@@ -51,6 +51,21 @@ class Settings:
     OWNER_CLARITY_WEIGHT = 0.5     # 소유자 불일치
     NO_OWNER_WEIGHT = 0.2          # 초기 소유자 없음
     STATIONARY_WEIGHT = 0.2        # 정지 상태 확실성
+
+    # --- CCTV 영상 검증 설정 ---
+    ALLOWED_VIDEO_EXTENSIONS = ('.mp4', '.avi', '.mkv')  # 허용 영상 확장자
+    ALLOWED_VIDEO_PREFIX = "/var/mju-lostfound/cctv/videos/"  # 운영 환경 허용 경로
+    DEV_VIDEO_PREFIX = "ai/video/"  # 개발 환경 허용 경로
+
+    # --- CCTV 타임아웃 설정 ---
+    ANALYSIS_TIMEOUT_SEC = 1800.0  # 영상 분석 최대 시간 (초)
+    CALLBACK_TIMEOUT_SEC = 2.0     # 콜백 HTTP 요청 타임아웃 (초)
+
+    # --- CCTV 콜백 경로 ---
+    CALLBACK_PATH_PROGRESS = "/api/internal/cctv/progress"
+    CALLBACK_PATH_DETECTION = "/api/internal/cctv/detection"
+    CALLBACK_PATH_COMPLETED = "/api/internal/cctv/completed"
+    CALLBACK_PATH_FAILED = "/api/internal/cctv/failed"
 
 # 싱글톤처럼 사용하기 위해 인스턴스화
 config = Settings()

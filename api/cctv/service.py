@@ -156,7 +156,7 @@ class CctvService:
 
         def send_progress(current_sec):
             trigger_callback_async(
-                f"{req.callback_base_url}/api/internal/cctv/progress", 
+                f"{req.callback_base_url}{config.CALLBACK_PATH_PROGRESS}", 
                 CctvProgressCallback(
                     video_id=video_id, 
                     status="IN_PROGRESS",
@@ -187,7 +187,7 @@ class CctvService:
                 self.logger.log_callback(detection_info.model_dump())
                 
                 # 외부 콜백 전송
-                trigger_callback_async(f"{req.callback_base_url}/api/internal/cctv/detection", detection_info)
+                trigger_callback_async(f"{req.callback_base_url}{config.CALLBACK_PATH_DETECTION}", detection_info)
                 job["detection_count"] += 1
 
         print(f"[INFO]     Starting video processing loop...")
@@ -200,7 +200,7 @@ class CctvService:
                     req.video_path, video_id, 
                     on_progress=send_progress, 
                     on_detection=on_detection
-                ), timeout=1800.0
+                ), timeout=config.ANALYSIS_TIMEOUT_SEC
             )
             
             job["status"] = "COMPLETED"
@@ -216,21 +216,21 @@ class CctvService:
             
             # 외부 콜백 전송
             trigger_callback_async(
-                f"{req.callback_base_url}/api/internal/cctv/completed",
+                f"{req.callback_base_url}{config.CALLBACK_PATH_COMPLETED}",
                 completed_payload
             )
                                
         except asyncio.TimeoutError:
-            print(f"[ERROR]    Analysis TIMEOUT for {video_id} (30 min exceeded)")
+            print(f"[ERROR]    Analysis TIMEOUT for {video_id} ({int(config.ANALYSIS_TIMEOUT_SEC // 60)} min exceeded)")
             job["status"] = "FAILED"
             failed_payload = CctvFailedCallback(
                 video_id=video_id,
                 error_code="TIMEOUT",
-                error_message="Single video processing exceeded 30 minutes",
+                error_message=f"Single video processing exceeded {int(config.ANALYSIS_TIMEOUT_SEC // 60)} minutes",
                 analyzed_seconds=int(req.duration_seconds * (job["progress"] / 100)),
                 total_seconds=req.duration_seconds
             )
-            trigger_callback_async(f"{req.callback_base_url}/api/internal/cctv/failed", failed_payload)
+            trigger_callback_async(f"{req.callback_base_url}{config.CALLBACK_PATH_FAILED}", failed_payload)
 
         except Exception as e:
             error_msg = str(e)
@@ -264,14 +264,14 @@ class CctvService:
             
             # 외부 콜백 전송
             trigger_callback_async(
-                f"{req.callback_base_url}/api/internal/cctv/failed",
+                f"{req.callback_base_url}{config.CALLBACK_PATH_FAILED}",
                 failed_payload
             )
 
     def _send_callback_impl(self, url: str, payload: BaseModel):
         """실제 HTTP 전송 (짧은 타임아웃 설정)"""
         try:
-            res = requests.post(url, json=payload.model_dump(mode='json'), timeout=2.0)
+            res = requests.post(url, json=payload.model_dump(mode='json'), timeout=config.CALLBACK_TIMEOUT_SEC)
             if res.status_code == 200:
                 print(f"[INFO]     Callback successfully sent to {url}")
                 return True
