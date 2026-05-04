@@ -273,6 +273,21 @@ class CctvService:
         try:
             res = requests.post(url, json=payload.model_dump(mode='json'), timeout=config.CALLBACK_TIMEOUT_SEC)
             if res.status_code == 200:
+                if url.endswith(config.CALLBACK_PATH_DETECTION):
+                    try:
+                        body = res.json()
+                        if body.get("duplicate") is True:
+                            print(
+                                f"[INFO]     Detection callback duplicate ignored by WAS "
+                                f"(detection_db_id={body.get('detection_db_id')})"
+                            )
+                        else:
+                            print(
+                                f"[INFO]     Detection callback accepted by WAS "
+                                f"(detection_db_id={body.get('detection_db_id')})"
+                            )
+                    except ValueError:
+                        print("[WARN]     Detection callback response is not valid JSON")
                 print(f"[INFO]     Callback successfully sent to {url}")
                 return True
             else:
