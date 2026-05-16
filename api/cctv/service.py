@@ -197,10 +197,12 @@ class CctvService:
                 category, color = result
                 vector = self.analyzer.extract_vector(det_data['baseline'])
                 
+                # recorded_at이 종료 시각이므로 시작 시각 계산
+                video_start_time = req.recorded_at - timedelta(seconds=req.duration_seconds)
                 detection_info = DetectionInfo(
                     detection_id=str(uuid.uuid4()),
                     video_id=video_id,
-                    detected_at=req.recorded_at + timedelta(seconds=det_data['detected_seconds']),
+                    detected_at=video_start_time + timedelta(seconds=det_data['detected_seconds']),
                     detected_category=category.replace(" ", "_").upper(),
                     detected_color=color.replace(" ", "_").upper(),
                     item_snapshot_filename=det_data['baseline'].split('/')[-1],
