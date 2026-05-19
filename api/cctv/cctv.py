@@ -14,7 +14,7 @@ async def enqueue_cctv(request: CctvEnqueueRequest):
     CCTV 영상 분석 요청을 큐에 등록
     """
     import os
-    
+
     # 1. 파일 확장자 검사 (415 UNSUPPORTED_FORMAT)
     if not request.video_path.lower().endswith(config.ALLOWED_VIDEO_EXTENSIONS):
         raise HTTPException(
@@ -22,14 +22,18 @@ async def enqueue_cctv(request: CctvEnqueueRequest):
             detail={"error_code": "UNSUPPORTED_FORMAT", "message": "Only mp4, avi, mkv are supported"}
         )
 
-    # 2. 허용된 경로 prefix 검사 (400 INVALID_PATH)
-    if not request.video_path.startswith(config.VIDEO_DIR):
+    # 2. URL prefix 검사 (400 INVALID_PATH)
+    if not request.video_path.startswith(config.VIDEO_URL_PREFIX):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"error_code": "INVALID_PATH", "message": f"Path must start with {config.VIDEO_DIR}"}
+            detail={"error_code": "INVALID_PATH", "message": f"video_path must start with {config.VIDEO_URL_PREFIX}"}
         )
 
-    # 3. 파일 존재 여부 검사 (404 VIDEO_NOT_FOUND)
+    # 3. URL을 fs 경로로 변환 (이후 service/processor는 fs 경로를 사용)
+    full_path = config.STORAGE_FS_PREFIX + request.video_path
+    request.video_path = full_path
+
+    # 4. 파일 존재 여부 검사 (404 VIDEO_NOT_FOUND)
     if not os.path.exists(request.video_path):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

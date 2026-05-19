@@ -6,7 +6,7 @@ from datetime import datetime
 # /cctv/enqueue
 class CctvEnqueueRequest(BaseModel):
     video_id: int # WAS 의 cctv_videos.id. 콜백에서 동일 값 사용
-    video_path: str # 절대 경로. /var/mju-lostfound/cctv/videos/ 외 거부
+    video_path: str # Spring DB에 저장된 URL (예: /storage/cctv/videos/foo.mp4). AI 측에서 fs 경로로 변환됨
     duration_seconds: int # 영상 총 길이
     recorded_at: datetime # 영상 녹화 시작 시각 (검출 시점 계산용)
     callback_base_url: str # 콜백 보낼 WAS 주소

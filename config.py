@@ -57,8 +57,9 @@ class Settings:
 
     # --- CCTV 영상 검증 설정 ---
     ALLOWED_VIDEO_EXTENSIONS = ('.mp4', '.avi')  # 허용 영상 확장자
-    VIDEO_DIR = "backend/storage/cctv/videos/"  # 비디오 저장 경로
-    SNAPSHOT_DIR = "backend/storage/cctv/snapshots/"  # 스냅샷 저장 경로
+    VIDEO_URL_PREFIX = "/storage/cctv/videos/"   # Spring이 보내는 video_path URL prefix (검증용)
+    STORAGE_FS_PREFIX = "backend"                # 프로젝트 root 기준 fs prefix (URL과 결합해 실제 파일 경로 생성)
+    SNAPSHOT_DIR = "backend/storage/cctv/snapshots/"  # 스냅샷 저장 경로 (AI가 직접 저장 시 사용)
     LOG_DIR = "backend/storage/cctv/" # 로그 저장 경로
 
     # --- CCTV 타임아웃 설정 ---
